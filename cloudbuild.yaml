@@ -2,3 +2,26 @@
 # github >>> trigger cloudbuild >>>> artifact registry
 
 
+steps:
+  # Step 1: Build the Docker image
+  - name: 'gcr.io/cloud-builders/docker'
+    args: [
+      'build', 
+      '-t', 'us-west4-docker.pkg.dev/$PROJECT_ID/demo-repo/hello-python:$SHORT_SHA', 
+      '.'
+    ]
+
+  # Step 2: Push the image to your Artifact Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args: [
+      'push', 
+      'us-west4-docker.pkg.dev/$PROJECT_ID/demo-repo/hello-python:$SHORT_SHA'
+    ]
+
+# Explicitly tell Cloud Build where to send logs to avoid the error you saw earlier
+options:
+  logging: CLOUD_LOGGING_ONLY
+
+# This ensures the image is officially tracked as a build artifact
+images:
+  - 'us-west4-docker.pkg.dev/$PROJECT_ID/demo-repo/hello-python:$SHORT_SHA'
