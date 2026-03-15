@@ -17,7 +17,15 @@ steps:
       'push', 
       'us-west4-docker.pkg.dev/$PROJECT_ID/demo-repo/hello-python:$SHORT_SHA'
     ]
-
+# Step 3: Create a VM and run the container
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: 'gcloud'
+    args: [
+      'compute', 'instances', 'create-with-container', 'my-python-vm',
+      '--container-image', 'us-west4-docker.pkg.dev/$PROJECT_ID/demo-repo/hello-python:$SHORT_SHA',
+      '--zone', 'us-west4-a',
+      '--tags', 'http-server'
+    ]
 # Explicitly tell Cloud Build where to send logs to avoid the error you saw earlier
 options:
   logging: CLOUD_LOGGING_ONLY
