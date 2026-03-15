@@ -30,7 +30,7 @@ steps:
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     entrypoint: 'gcloud'
     args: [
-      'compute', 'instances', 'create-with-container', 'my-python-vm',
+      'compute', 'instances', 'create-with-container', 'my-python-vm2',
       '--container-image', 'us-west4-docker.pkg.dev/$PROJECT_ID/demo-repo/hello-python:$SHORT_SHA',
       '--zone', 'us-west4-a'
     ]
