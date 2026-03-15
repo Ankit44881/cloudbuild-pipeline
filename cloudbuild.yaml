@@ -17,11 +17,20 @@ steps:
       'push', 
       'us-west4-docker.pkg.dev/$PROJECT_ID/demo-repo/hello-python:$SHORT_SHA'
     ]
-# Step 3: Create a VM and run the container
+# Step 3: update the exisiting VM container image
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
     entrypoint: 'gcloud'
     args: [
       'compute', 'instances', 'update-container', 'my-python-vm',
+      '--container-image', 'us-west4-docker.pkg.dev/$PROJECT_ID/demo-repo/hello-python:$SHORT_SHA',
+      '--zone', 'us-west4-a'
+    ]
+
+# Step 4: Create a VM and run the container
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: 'gcloud'
+    args: [
+      'compute', 'instances', 'create-with-container', 'my-python-vm',
       '--container-image', 'us-west4-docker.pkg.dev/$PROJECT_ID/demo-repo/hello-python:$SHORT_SHA',
       '--zone', 'us-west4-a'
     ]
