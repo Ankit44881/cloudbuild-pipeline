@@ -1,0 +1,4 @@
+# here we will write the pipeline steps
+# github >>> trigger cloudbuild >>>> artifact registry
+
+
