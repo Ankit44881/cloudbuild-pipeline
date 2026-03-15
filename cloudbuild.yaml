@@ -23,8 +23,7 @@ steps:
     args: [
       'compute', 'instances', 'update-container', 'my-python-vm',
       '--container-image', 'us-west4-docker.pkg.dev/$PROJECT_ID/demo-repo/hello-python:$SHORT_SHA',
-      '--zone', 'us-west4-a',
-      '--tags', 'http-server'
+      '--zone', 'us-west4-a'
     ]
 # Explicitly tell Cloud Build where to send logs to avoid the error you saw earlier
 options:
