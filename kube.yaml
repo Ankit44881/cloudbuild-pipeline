@@ -14,7 +14,7 @@ spec:
     spec: # <--- This is now indented under template
       containers:
       - name: app-container
-        image: us-east1-docker.pkg.dev/qwiklabs-gcp-04-f3fb5187c45c/my-repo/my-app
+        image: us-east1-docker.pkg.dev/qwiklabs-gcp-04-f3fb5187c45c/my-repo/my-app:${BUILD_ID}
         ports:
         - containerPort: 8080
 ---
