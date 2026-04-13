@@ -5,7 +5,7 @@ app = Flask(__name__)
 
 @app.route("/")
 def hello_world():
-    return "Hello from continuous deployemnt version 2."
+    return "Hello from Ankit's CI-CD."
 
 if __name__ == "__main__":
     # Cloud Run/GCP expects the app to listen on the port defined by the PORT env var

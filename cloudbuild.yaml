@@ -1,43 +1,14 @@
-# here we will write the pipeline steps
-# github >>> trigger cloudbuild >>>> artifact registry
-
-
 steps:
-  # Step 1: Build the Docker image
+  # 1. Build the Docker image from file
   - name: 'gcr.io/cloud-builders/docker'
-    args: [
-      'build', 
-      '-t', 'us-west4-docker.pkg.dev/$PROJECT_ID/demo-repo/hello-python:$SHORT_SHA', 
-      '.'
-    ]
+    args:
+      - 'build'
+      - '-t'
+      - 'us-east1-docker.pkg.dev/qwiklabs-gcp-04-f3fb5187c45c/my-repo/my-app:${BUILD_ID}'
+      - '.'
 
-  # Step 2: Push the image to your Artifact Registry
+  # 2. Push the image to Artifact Registry
   - name: 'gcr.io/cloud-builders/docker'
-    args: [
-      'push', 
-      'us-west4-docker.pkg.dev/$PROJECT_ID/demo-repo/hello-python:$SHORT_SHA'
-    ]
-# Step 3: update the exisiting VM container image
-  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
-    entrypoint: 'gcloud'
-    args: [
-      'compute', 'instances', 'update-container', 'my-python-vm',
-      '--container-image', 'us-west4-docker.pkg.dev/$PROJECT_ID/demo-repo/hello-python:$SHORT_SHA',
-      '--zone', 'us-west4-a'
-    ]
-
-# Step 4: Create a VM and run the container
-  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
-    entrypoint: 'gcloud'
-    args: [
-      'compute', 'instances', 'create-with-container', 'my-python-vm2',
-      '--container-image', 'us-west4-docker.pkg.dev/$PROJECT_ID/demo-repo/hello-python:$SHORT_SHA',
-      '--zone', 'us-west4-a'
-    ]
-# Explicitly tell Cloud Build where to send logs to avoid the error you saw earlier
-options:
-  logging: CLOUD_LOGGING_ONLY
-
-# This ensures the image is officially tracked as a build artifact
-images:
-  - 'us-west4-docker.pkg.dev/$PROJECT_ID/demo-repo/hello-python:$SHORT_SHA'
+    args:
+      - 'push'
+      - 'us-east1-docker.pkg.dev/qwiklabs-gcp-04-f3fb5187c45c/my-repo/my-app:${BUILD_ID}'
