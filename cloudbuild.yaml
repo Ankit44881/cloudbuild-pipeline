@@ -12,3 +12,6 @@ steps:
     args:
       - 'push'
       - 'us-east1-docker.pkg.dev/qwiklabs-gcp-04-f3fb5187c45c/my-repo/my-app:${BUILD_ID}'
+
+options:
+  logging: CLOUD_LOGGING_ONLY
