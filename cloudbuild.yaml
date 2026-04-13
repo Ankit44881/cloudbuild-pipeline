@@ -13,5 +13,13 @@ steps:
       - 'push'
       - 'us-east1-docker.pkg.dev/qwiklabs-gcp-04-f3fb5187c45c/my-repo/my-app:${BUILD_ID}'
 
+  # 3. deploy image to gke
+
+  - name: 'gcr.io/cloud-builders/kubectl'
+    args: ['apply', '-f', 'kube.yaml']
+    env:
+      - 'CLOUDSDK_COMPUTE_ZONE=us-east1'
+      - 'CLOUDSDK_CONTAINER_CLUSTER=devops-cluster'
+
 options:
   logging: CLOUD_LOGGING_ONLY
