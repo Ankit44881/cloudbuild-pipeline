@@ -1,18 +1,18 @@
 steps:
   # 1. Build
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['build', '-t', 'us-east1-docker.pkg.dev/$PROJECT_ID/my-repo/my-app:${BUILD_ID}', '.']
+    args: ['build', '-t', 'us-east1-docker.pkg.dev/$PROJECT_ID/my-repo/my-app:$SHORT_SHA', '.']
 
   # 2. Push
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['push', 'us-east1-docker.pkg.dev/$PROJECT_ID/my-repo/my-app:${BUILD_ID}']
+    args: ['push', 'us-east1-docker.pkg.dev/$PROJECT_ID/my-repo/my-app:$SHORT_SHA']
 
   # 3. Deploy (This is where the "magic" swap happens)
   - name: 'gcr.io/cloud-builders/gke-deploy'
     args:
       - run
       - --filename=kube.yaml
-      - --image=us-east1-docker.pkg.dev/$PROJECT_ID/my-repo/my-app:${BUILD_ID}
+      - --image=us-east1-docker.pkg.dev/$PROJECT_ID/my-repo/my-app:$SHORT_SHA
       - --location=us-east1
       - --cluster=devops-cluster
 
