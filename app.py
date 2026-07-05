@@ -5,7 +5,7 @@ from flask import Flask
 
 app = Flask(__name__)
 
-VERSION = os.environ.get("APP_VERSION", "Version 3")
+VERSION = os.environ.get("APP_VERSION", "Version 4")
 HOSTNAME = socket.gethostname()
 
 
