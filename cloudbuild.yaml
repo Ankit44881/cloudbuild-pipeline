@@ -29,68 +29,56 @@ steps:
     args:
       - 'build'
       - '-t'
-      - 'us-central1-docker.pkg.dev/$PROJECT_ID/om-app-repo/frontend-image:$SHORT_SHA'
+      - '$_FRONTEND_IMAGE:$SHORT_SHA'
       - './frontend'
 
   - name: 'gcr.io/cloud-builders/docker'
     args:
       - 'push'
-      - 'us-central1-docker.pkg.dev/$PROJECT_ID/om-app-repo/frontend-image:$SHORT_SHA'
+      - '$_FRONTEND_IMAGE:$SHORT_SHA'
 
   # Backend Build & Push
   - name: 'gcr.io/cloud-builders/docker'
     args:
       - 'build'
       - '-t'
-      - 'us-central1-docker.pkg.dev/$PROJECT_ID/om-app-repo/backend-image:$SHORT_SHA'
+      - '$_BACKEND_IMAGE:$SHORT_SHA'
       - './backend'
 
   - name: 'gcr.io/cloud-builders/docker'
     args:
       - 'push'
-      - 'us-central1-docker.pkg.dev/$PROJECT_ID/om-app-repo/backend-image:$SHORT_SHA'
+      - '$_BACKEND_IMAGE:$SHORT_SHA'
 
   # ---------------------------------------------------------
-  # 3. DEPLOY VIA GKE-DEPLOY (Handles auth, image tag swap & rollout checks)
-  # ---------------------------------------------------------
-  # Deploy Frontend
-  - name: 'gcr.io/cloud-builders/gke-deploy'
-    args:
-      - run
-      - --filename=kubernetes/front-deploy.yaml
-      - --image=us-central1-docker.pkg.dev/$PROJECT_ID/om-app-repo/frontend-image:$SHORT_SHA
-      - --location=$_LOCATION
-      - --cluster=$_CLUSTER
-      - --output=output/frontend
-
-  # Deploy Backend
-  - name: 'gcr.io/cloud-builders/gke-deploy'
-    args:
-      - run
-      - --filename=kubernetes/backend-deploy.yaml
-      - --image=us-central1-docker.pkg.dev/$PROJECT_ID/om-app-repo/backend-image:$SHORT_SHA
-      - --location=$_LOCATION
-      - --cluster=$_CLUSTER
-      - --output=output/backend
-
-  # ---------------------------------------------------------
-  # 4. OBSERVABILITY: Fetch Cluster Auth, Active Images & Live Status
+  # 3. KUBERNETES DEPLOYMENT & OBSERVABILITY
   # ---------------------------------------------------------
   - name: 'gcr.io/cloud-builders/gcloud'
     entrypoint: 'bash'
     args:
       - '-c'
       - |
-        # 1. Fetch Cluster Credentials for kubectl
+        # 1. Fetch Cluster Credentials once
         gcloud container clusters get-credentials $_CLUSTER --zone $_LOCATION --project $PROJECT_ID
         
-        # 2. Print Currently Running Container Images
+        # 2. Apply Base Manifests (Idempotent - syncs ports, env vars, etc.)
+        kubectl apply -f kubernetes/
+
+        # 3. Update Deployment Images directly using substitution variables
+        kubectl set image deployment/frontend frontend=$_FRONTEND_IMAGE:$SHORT_SHA
+        kubectl set image deployment/backend backend=$_BACKEND_IMAGE:$SHORT_SHA
+
+        # 4. Wait for Rollouts to complete successfully
+        kubectl rollout status deployment/frontend --timeout=120s
+        kubectl rollout status deployment/backend --timeout=120s
+
+        echo "------------------------------------------"
         echo "=== CURRENTLY RUNNING DEPLOYMENT IMAGES ==="
         echo "Frontend Image: $(kubectl get deployment frontend -o jsonpath='{.spec.template.spec.containers[0].image}')"
         echo "Backend Image:  $(kubectl get deployment backend -o jsonpath='{.spec.template.spec.containers[0].image}')"
         echo "------------------------------------------"
 
-        # 3. Print Live Resources
+        # 5. Print Live Resources Status
         echo "=== LIVE PODS ==="
         kubectl get pods -o wide
         echo "=== LIVE SERVICES ==="
@@ -101,6 +89,8 @@ steps:
 substitutions:
   _LOCATION: 'us-central1-a'
   _CLUSTER: 'gke-cluster'
+  _FRONTEND_IMAGE: 'us-central1-docker.pkg.dev/$PROJECT_ID/om-app-repo/frontend-image'
+  _BACKEND_IMAGE: 'us-central1-docker.pkg.dev/$PROJECT_ID/om-app-repo/backend-image'
 
 options:
   logging: CLOUD_LOGGING_ONLY
