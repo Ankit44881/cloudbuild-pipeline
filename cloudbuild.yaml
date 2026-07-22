@@ -9,7 +9,7 @@ steps:
       - |
         IST_TIME=$(python3 -c "from datetime import datetime, timezone, timedelta; print((datetime.now(timezone.utc) + timedelta(hours=5, minutes=30)).strftime('%Y-%m-%d %I:%M:%S %p IST'))")
         
-        cat > ./app/version.json <<EOF
+        cat > ./frontend/version.json <<EOF
         {
           "application": "Chai Politics",
           "version": "1.0.$BUILD_ID",
