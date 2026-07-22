@@ -14,6 +14,6 @@ spec:
     spec:
       containers:
       - name: backend  # Container name changed to backend
-        image: us-central1-docker.pkg.dev/project-e88d1c23-e44c-4d58-8dd/om-app-repo/order-backend:latest
+        image: us-central1-docker.pkg.dev/project-e88d1c23-e44c-4d58-8dd/om-app-repo/backend-image:latest
         ports:
         - containerPort: 5000
