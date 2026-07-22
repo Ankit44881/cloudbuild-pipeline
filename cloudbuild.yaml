@@ -1,21 +1,49 @@
 steps:
   # 1. Build & Push Backend Image
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['build', '-t', 'us-central1-docker.pkg.dev/$PROJECT_ID/om-app-repo/order-backend:$SHORT_SHA', './backend']
+    args:
+      - 'build'
+      - '-t'
+      - 'us-central1-docker.pkg.dev/$PROJECT_ID/om-app-repo/order-backend:$SHORT_SHA'
+      - './backend'
 
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['push', 'us-central1-docker.pkg.dev/$PROJECT_ID/om-app-repo/order-backend:$SHORT_SHA']
+    args:
+      - 'push'
+      - 'us-central1-docker.pkg.dev/$PROJECT_ID/om-app-repo/order-backend:$SHORT_SHA'
 
-  # 2. Build & Push Frontend Image (using updated 'frontend' directory)
+  # 2a. Generate version.json dynamically inside frontend directory
+  - name: 'gcr.io/cloud-builders/gcloud'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        cat > ./frontend/version.json <<EOF
+        {
+          "application": "Chai Politics",
+          "version": "1.0.$BUILD_ID",
+          "imageTag": "$SHORT_SHA",
+          "commit": "$SHORT_SHA",
+          "environment": "Production",
+          "cluster": "gke-cluster",
+          "deployedAt": "$(TZ=Asia/Kolkata date +'%Y-%m-%d %I:%M:%S %p IST')"
+        }
+        EOF
+
+  # 2b. Build & Push Frontend Image (Includes updated version.json)
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['build', '-t', 'us-central1-docker.pkg.dev/$PROJECT_ID/om-app-repo/order-frontend:$SHORT_SHA', './frontend']
+    args:
+      - 'build'
+      - '-t'
+      - 'us-central1-docker.pkg.dev/$PROJECT_ID/om-app-repo/order-frontend:$SHORT_SHA'
+      - './frontend'
 
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['push', 'us-central1-docker.pkg.dev/$PROJECT_ID/om-app-repo/order-frontend:$SHORT_SHA']
+    args:
+      - 'push'
+      - 'us-central1-docker.pkg.dev/$PROJECT_ID/om-app-repo/order-frontend:$SHORT_SHA'
 
- 
-
-# 3a. Deploy Backend
+  # 3a. Deploy Backend to GKE
   - name: 'gcr.io/cloud-builders/gke-deploy'
     args:
       - run
@@ -25,7 +53,7 @@ steps:
       - --cluster=gke-cluster
       - --output=output/backend
 
-  # 3b. Deploy Frontend
+  # 3b. Deploy Frontend to GKE
   - name: 'gcr.io/cloud-builders/gke-deploy'
     args:
       - run
@@ -35,19 +63,19 @@ steps:
       - --cluster=gke-cluster
       - --output=output/frontend
 
-  # 3c. Apply Remaining Manifests (Services & Ingress)
+  # 4. Apply Kubernetes Services / Ingress
   - name: 'gcr.io/cloud-builders/kubectl'
     args:
       - 'apply'
       - '-f'
-      - 'kubernetes/backend-service.yaml'
-      - '-f'
-      - 'kubernetes/front-service.yaml'
-      - '-f'
-      - 'kubernetes/ingress.yaml'
+      - 'kubernetes/'
     env:
       - 'CLOUDSDK_COMPUTE_ZONE=us-central1-a'
       - 'CLOUDSDK_CONTAINER_CLUSTER=gke-cluster'
 
+substitutions:
+  _LOCATION: 'us-central1-a'
+  _CLUSTER: 'gke-cluster'
+
 options:
-    logging: CLOUD_LOGGING_ONLY
+  logging: CLOUD_LOGGING_ONLY
