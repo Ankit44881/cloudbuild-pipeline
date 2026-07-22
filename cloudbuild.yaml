@@ -89,8 +89,8 @@ steps:
 substitutions:
   _LOCATION: 'us-central1-a'
   _CLUSTER: 'gke-cluster'
-  _FRONTEND_IMAGE: 'us-central1-docker.pkg.dev/$PROJECT_ID/om-app-repo/frontend-image'
-  _BACKEND_IMAGE: 'us-central1-docker.pkg.dev/$PROJECT_ID/om-app-repo/backend-image'
+  _FRONTEND_IMAGE: 'us-central1-docker.pkg.dev/project-e88d1c23-e44c-4d58-8dd/om-app-repo/frontend-image'
+  _BACKEND_IMAGE: 'us-central1-docker.pkg.dev/project-e88d1c23-e44c-4d58-8dd/om-app-repo/backend-image'
 
 options:
   logging: CLOUD_LOGGING_ONLY
