@@ -1,6 +1,4 @@
-FROM python:3.10-slim
-WORKDIR /app
-COPY . /app
-RUN pip install flask
-EXPOSE 8080
-CMD [ "python" , "app.py"]
+FROM nginx:alpine
+COPY app/ /usr/share/nginx/html/
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]
