@@ -17,7 +17,7 @@ steps:
           "commit": "$SHORT_SHA",
           "environment": "Production",
           "cluster": "$_CLUSTER",
-          "deployedAt": "$IST_TIME"
+          "deployedAt": "$$IST_TIME"
         }
         EOF
 
