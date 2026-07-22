@@ -1,20 +1,48 @@
 steps:
-  # 1. Build
+  # 1. Build & Push Backend Image
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['build', '-t', 'us-east1-docker.pkg.dev/$PROJECT_ID/my-repo/my-app:$SHORT_SHA', '.']
+    args: ['build', '-t', 'us-central1-docker.pkg.dev/$PROJECT_ID/om-app-repo/order-backend:$SHORT_SHA', './backend']
 
-  # 2. Push
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['push', 'us-east1-docker.pkg.dev/$PROJECT_ID/my-repo/my-app:$SHORT_SHA']
+    args: ['push', 'us-central1-docker.pkg.dev/$PROJECT_ID/om-app-repo/order-backend:$SHORT_SHA']
 
-  # 3. Deploy (This is where the "magic" swap happens)
+  # 2. Build & Push Frontend Image (using updated 'frontend' directory)
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-t', 'us-central1-docker.pkg.dev/$PROJECT_ID/om-app-repo/order-frontend:$SHORT_SHA', './frontend']
+
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'us-central1-docker.pkg.dev/$PROJECT_ID/om-app-repo/order-frontend:$SHORT_SHA']
+
+ 
+
+# 3a. Deploy Backend
   - name: 'gcr.io/cloud-builders/gke-deploy'
     args:
       - run
-      - --filename=kube.yaml
-      - --image=us-east1-docker.pkg.dev/$PROJECT_ID/my-repo/my-app:$SHORT_SHA
-      - --location=us-east1-b
-      - --cluster=devops-cluster
+      - --filename=kubernetes/backend-deploy.yaml
+      - --image=us-central1-docker.pkg.dev/$PROJECT_ID/om-app-repo/order-backend:$SHORT_SHA
+      - --location=us-central1-a
+      - --cluster=gke-cluster
 
-options:
-  logging: CLOUD_LOGGING_ONLY
+  # 3b. Deploy Frontend
+  - name: 'gcr.io/cloud-builders/gke-deploy'
+    args:
+      - run
+      - --filename=kubernetes/front-deploy.yaml
+      - --image=us-central1-docker.pkg.dev/$PROJECT_ID/om-app-repo/order-frontend:$SHORT_SHA
+      - --location=us-central1-a
+      - --cluster=gke-cluster
+
+  # 3c. Apply Remaining Manifests (Services & Ingress)
+  - name: 'gcr.io/cloud-builders/kubectl'
+    args:
+      - 'apply'
+      - '-f'
+      - 'kubernetes/backend-service.yaml'
+      - '-f'
+      - 'kubernetes/front-service.yaml'
+      - '-f'
+      - 'kubernetes/ingress.yaml'
+    env:
+      - 'CLOUDSDK_COMPUTE_ZONE=us-central1-a'
+      - 'CLOUDSDK_CONTAINER_CLUSTER=gke-cluster'
