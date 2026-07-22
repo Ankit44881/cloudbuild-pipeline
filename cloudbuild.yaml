@@ -23,6 +23,7 @@ steps:
       - --image=us-central1-docker.pkg.dev/$PROJECT_ID/om-app-repo/order-backend:$SHORT_SHA
       - --location=us-central1-a
       - --cluster=gke-cluster
+      - --output=output/backend
 
   # 3b. Deploy Frontend
   - name: 'gcr.io/cloud-builders/gke-deploy'
@@ -32,6 +33,7 @@ steps:
       - --image=us-central1-docker.pkg.dev/$PROJECT_ID/om-app-repo/order-frontend:$SHORT_SHA
       - --location=us-central1-a
       - --cluster=gke-cluster
+      - --output=output/frontend
 
   # 3c. Apply Remaining Manifests (Services & Ingress)
   - name: 'gcr.io/cloud-builders/kubectl'
