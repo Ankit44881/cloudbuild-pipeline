@@ -7,7 +7,7 @@ steps:
     args:
       - '-c'
       - |
-        IST_TIME=$(python3 -c "from datetime import datetime, timezone, timedelta; print((datetime.now(timezone.utc) + timedelta(hours=5, minutes=30)).strftime('%Y-%m-%d %I:%M:%S %p IST'))")
+        IST_TIME=$$(python3 -c "from datetime import datetime, timezone, timedelta; print((datetime.now(timezone.utc) + timedelta(hours=5, minutes=30)).strftime('%Y-%m-%d %I:%M:%S %p IST'))")
         
         cat > ./frontend/version.json <<EOF
         {
@@ -74,7 +74,7 @@ steps:
       - --output=output/backend
 
   # ---------------------------------------------------------
-  # 4. OBSERVABILITY: Fetch Cluster Auth & Print Live Status
+  # 4. OBSERVABILITY: Fetch Cluster Auth, Active Images & Live Status
   # ---------------------------------------------------------
   - name: 'gcr.io/cloud-builders/gcloud'
     entrypoint: 'bash'
@@ -84,7 +84,13 @@ steps:
         # 1. Fetch Cluster Credentials for kubectl
         gcloud container clusters get-credentials $_CLUSTER --zone $_LOCATION --project $PROJECT_ID
         
-        # 2. Print Live Resources
+        # 2. Print Currently Running Container Images
+        echo "=== CURRENTLY RUNNING DEPLOYMENT IMAGES ==="
+        echo "Frontend Image: $(kubectl get deployment frontend -o jsonpath='{.spec.template.spec.containers[0].image}')"
+        echo "Backend Image:  $(kubectl get deployment backend -o jsonpath='{.spec.template.spec.containers[0].image}')"
+        echo "------------------------------------------"
+
+        # 3. Print Live Resources
         echo "=== LIVE PODS ==="
         kubectl get pods -o wide
         echo "=== LIVE SERVICES ==="
