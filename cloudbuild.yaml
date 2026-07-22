@@ -1,77 +1,96 @@
 steps:
-  # 1. Build & Push Backend Image
-  - name: 'gcr.io/cloud-builders/docker'
-    args:
-      - 'build'
-      - '-t'
-      - 'us-central1-docker.pkg.dev/$PROJECT_ID/om-app-repo/order-backend:$SHORT_SHA'
-      - './backend'
-
-  - name: 'gcr.io/cloud-builders/docker'
-    args:
-      - 'push'
-      - 'us-central1-docker.pkg.dev/$PROJECT_ID/om-app-repo/order-backend:$SHORT_SHA'
-
-  # 2a. Generate version.json dynamically inside frontend directory
+  # ---------------------------------------------------------
+  # 1. FRONTEND: Generate Dynamic version.json
+  # ---------------------------------------------------------
   - name: 'gcr.io/cloud-builders/gcloud'
     entrypoint: 'bash'
     args:
       - '-c'
       - |
-        cat > ./frontend/version.json <<EOF
+        IST_TIME=$(python3 -c "from datetime import datetime, timezone, timedelta; print((datetime.now(timezone.utc) + timedelta(hours=5, minutes=30)).strftime('%Y-%m-%d %I:%M:%S %p IST'))")
+        
+        cat > ./app/version.json <<EOF
         {
           "application": "Chai Politics",
           "version": "1.0.$BUILD_ID",
           "imageTag": "$SHORT_SHA",
           "commit": "$SHORT_SHA",
           "environment": "Production",
-          "cluster": "gke-cluster",
-          "deployedAt": "$(TZ=Asia/Kolkata date +'%Y-%m-%d %I:%M:%S %p IST')"
+          "cluster": "$_CLUSTER",
+          "deployedAt": "$IST_TIME"
         }
         EOF
 
-  # 2b. Build & Push Frontend Image (Includes updated version.json)
+  # ---------------------------------------------------------
+  # 2. BUILD & PUSH DOCKER IMAGES
+  # ---------------------------------------------------------
+  # Frontend Build & Push
   - name: 'gcr.io/cloud-builders/docker'
     args:
       - 'build'
       - '-t'
-      - 'us-central1-docker.pkg.dev/$PROJECT_ID/om-app-repo/order-frontend:$SHORT_SHA'
-      - './frontend'
+      - 'us-central1-docker.pkg.dev/$PROJECT_ID/om-app-repo/frontend-image:$SHORT_SHA'
+      - '.'
 
   - name: 'gcr.io/cloud-builders/docker'
     args:
       - 'push'
-      - 'us-central1-docker.pkg.dev/$PROJECT_ID/om-app-repo/order-frontend:$SHORT_SHA'
+      - 'us-central1-docker.pkg.dev/$PROJECT_ID/om-app-repo/frontend-image:$SHORT_SHA'
 
-  # 3a. Deploy Backend to GKE
-  - name: 'gcr.io/cloud-builders/gke-deploy'
+  # Backend Build & Push
+  - name: 'gcr.io/cloud-builders/docker'
     args:
-      - run
-      - --filename=kubernetes/backend-deploy.yaml
-      - --image=us-central1-docker.pkg.dev/$PROJECT_ID/om-app-repo/order-backend:$SHORT_SHA
-      - --location=us-central1-a
-      - --cluster=gke-cluster
-      - --output=output/backend
+      - 'build'
+      - '-t'
+      - 'us-central1-docker.pkg.dev/$PROJECT_ID/om-app-repo/backend-image:$SHORT_SHA'
+      - './backend'
 
-  # 3b. Deploy Frontend to GKE
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - 'us-central1-docker.pkg.dev/$PROJECT_ID/om-app-repo/backend-image:$SHORT_SHA'
+
+  # ---------------------------------------------------------
+  # 3. DEPLOY VIA GKE-DEPLOY (Handles auth, image tag swap & rollout checks)
+  # ---------------------------------------------------------
+  # Deploy Frontend
   - name: 'gcr.io/cloud-builders/gke-deploy'
     args:
       - run
       - --filename=kubernetes/front-deploy.yaml
-      - --image=us-central1-docker.pkg.dev/$PROJECT_ID/om-app-repo/order-frontend:$SHORT_SHA
-      - --location=us-central1-a
-      - --cluster=gke-cluster
+      - --image=us-central1-docker.pkg.dev/$PROJECT_ID/om-app-repo/frontend-image:$SHORT_SHA
+      - --location=$_LOCATION
+      - --cluster=$_CLUSTER
       - --output=output/frontend
 
-  # 4. Apply Kubernetes Services / Ingress
-  - name: 'gcr.io/cloud-builders/kubectl'
+  # Deploy Backend
+  - name: 'gcr.io/cloud-builders/gke-deploy'
     args:
-      - 'apply'
-      - '-f'
-      - 'kubernetes/'
-    env:
-      - 'CLOUDSDK_COMPUTE_ZONE=us-central1-a'
-      - 'CLOUDSDK_CONTAINER_CLUSTER=gke-cluster'
+      - run
+      - --filename=kubernetes/backend-deploy.yaml
+      - --image=us-central1-docker.pkg.dev/$PROJECT_ID/om-app-repo/backend-image:$SHORT_SHA
+      - --location=$_LOCATION
+      - --cluster=$_CLUSTER
+      - --output=output/backend
+
+  # ---------------------------------------------------------
+  # 4. OBSERVABILITY: Fetch Cluster Auth & Print Live Status
+  # ---------------------------------------------------------
+  - name: 'gcr.io/cloud-builders/gcloud'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        # 1. Fetch Cluster Credentials for kubectl
+        gcloud container clusters get-credentials $_CLUSTER --zone $_LOCATION --project $PROJECT_ID
+        
+        # 2. Print Live Resources
+        echo "=== LIVE PODS ==="
+        kubectl get pods -o wide
+        echo "=== LIVE SERVICES ==="
+        kubectl get svc
+        echo "=== LIVE INGRESS ==="
+        kubectl get ingress
 
 substitutions:
   _LOCATION: 'us-central1-a'
