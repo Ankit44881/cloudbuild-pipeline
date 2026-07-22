@@ -14,6 +14,6 @@ spec:
     spec:
       containers:
       - name: frontend  # Container name changed to frontend
-        image: FRONTEND_IMAGE_PLACEHOLDER
+        image: us-central1-docker.pkg.dev/$PROJECT_ID/om-app-repo/order-frontend:latest
         ports:
         - containerPort: 80
