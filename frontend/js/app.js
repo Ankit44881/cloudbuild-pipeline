@@ -1,4 +1,6 @@
+// ==========================================
 // 1. Session and Cart State Helper
+// ==========================================
 function getUserSession() {
     return {
         name: localStorage.getItem('cp_user_name'),
@@ -6,13 +8,17 @@ function getUserSession() {
     };
 }
 
+// ==========================================
 // 2. Page Load Initializer
+// ==========================================
 document.addEventListener('DOMContentLoaded', () => {
     updateNavbarUI();
     fetchCartCount();
 });
 
+// ==========================================
 // 3. Navbar UI Sync Across Pages
+// ==========================================
 function updateNavbarUI() {
     const session = getUserSession();
     const navUl = document.querySelector('nav ul');
@@ -36,26 +42,101 @@ function updateNavbarUI() {
     } else {
         li.innerHTML = `
             <button class="cart-nav-btn" onclick="openLoginModal()">
-                🔑 Login to Order
+                🔑 Login / Register
             </button>
         `;
     }
     navUl.appendChild(li);
 }
 
-// 4. Login Action
+// ==========================================
+// 4. Modal Tab Switcher (Login vs Register)
+// ==========================================
+function switchAuthTab(tab) {
+    const loginForm = document.getElementById('loginFormSection');
+    const regForm = document.getElementById('regFormSection');
+    const loginBtn = document.getElementById('loginTabBtn');
+    const regBtn = document.getElementById('regTabBtn');
+
+    if (!loginForm || !regForm) return;
+
+    if (tab === 'login') {
+        loginForm.style.display = 'block';
+        regForm.style.display = 'none';
+        
+        loginBtn.style.background = '#ff6600';
+        loginBtn.style.color = 'white';
+        loginBtn.style.border = 'none';
+
+        regBtn.style.background = '#f5f5f5';
+        regBtn.style.color = '#333';
+        regBtn.style.border = '1px solid #ccc';
+    } else {
+        loginForm.style.display = 'none';
+        regForm.style.display = 'block';
+
+        regBtn.style.background = '#0284c7';
+        regBtn.style.color = 'white';
+        regBtn.style.border = 'none';
+
+        loginBtn.style.background = '#f5f5f5';
+        loginBtn.style.color = '#333';
+        loginBtn.style.border = '1px solid #ccc';
+    }
+}
+
+// ==========================================
+// 5. Existing User Login Action
+// ==========================================
 async function handleLogin(event) {
     event.preventDefault();
-    const name = document.getElementById('loginName').value.trim();
     const phone = document.getElementById('loginPhone').value.trim();
 
-    if (!name || !phone) {
-        alert("Please enter Name and Phone number");
+    if (!phone) {
+        alert("Please enter phone number");
         return;
     }
 
     try {
         const response = await fetch('/api/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ phone })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            localStorage.setItem('cp_user_name', data.name);
+            localStorage.setItem('cp_user_phone', data.phone);
+            closeLoginModal();
+            updateNavbarUI();
+            fetchCartCount();
+            alert(`Welcome back, ${data.name}!`);
+        } else {
+            alert(data.error || "Login failed");
+        }
+    } catch (err) {
+        console.error("Login Error:", err);
+        alert("Server error during login.");
+    }
+}
+
+// ==========================================
+// 6. New User Registration Action
+// ==========================================
+async function handleRegister(event) {
+    event.preventDefault();
+    const name = document.getElementById('regName').value.trim();
+    const phone = document.getElementById('regPhone').value.trim();
+
+    if (!name || !phone) {
+        alert("Please enter both Name and Phone number");
+        return;
+    }
+
+    try {
+        const response = await fetch('/api/register', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ name, phone })
@@ -69,15 +150,19 @@ async function handleLogin(event) {
             closeLoginModal();
             updateNavbarUI();
             fetchCartCount();
+            alert("🎉 Account created successfully!");
         } else {
-            alert(data.error || "Login failed");
+            alert(data.error || "Registration failed");
         }
     } catch (err) {
-        console.error("Login Error:", err);
+        console.error("Registration Error:", err);
+        alert("Server error during registration.");
     }
 }
 
-// 5. Add to Cart Logic (Used in menu.html)
+// ==========================================
+// 7. Add to Cart Logic
+// ==========================================
 async function addToCart(itemName, price) {
     const session = getUserSession();
 
@@ -110,7 +195,9 @@ async function addToCart(itemName, price) {
     }
 }
 
-// 6. Fetch Cart Details by User Phone Number
+// ==========================================
+// 8. Fetch Cart Details by Phone Number
+// ==========================================
 async function fetchCartCount() {
     const session = getUserSession();
     if (!session.phone) return;
@@ -126,7 +213,9 @@ async function fetchCartCount() {
     }
 }
 
-// 7. Render Modal Data
+// ==========================================
+// 9. Render Cart Modal Data
+// ==========================================
 function renderCartModalItems(items) {
     const badge = document.getElementById('cartCountBadge');
     const list = document.getElementById('cartItemsList');
@@ -164,6 +253,38 @@ function renderCartModalItems(items) {
     if (total) total.innerText = '₹' + sum.toFixed(2);
 }
 
+// ==========================================
+// 10. Confirm Order / Place Order Action
+// ==========================================
+async function confirmOrder() {
+    const session = getUserSession();
+    if (!session.phone) {
+        alert("Please log in to confirm your order.");
+        return;
+    }
+
+    try {
+        const res = await fetch(`/api/cart/${session.phone}`, {
+            method: 'DELETE'
+        });
+
+        if (res.ok) {
+            alert("🎉 Order placed successfully! Your chai & snacks are being prepared.");
+            closeCartModal();
+            fetchCartCount();
+        } else {
+            const data = await res.json();
+            alert(data.error || "Failed to place order. Please try again.");
+        }
+    } catch (err) {
+        console.error("Confirm Order Error:", err);
+        alert("Network error. Could not place order.");
+    }
+}
+
+// ==========================================
+// 11. Modal Helper Functions
+// ==========================================
 function logoutUser() {
     localStorage.removeItem('cp_user_name');
     localStorage.removeItem('cp_user_phone');
@@ -181,6 +302,7 @@ function closeCartModal() {
 
 function openLoginModal() {
     document.getElementById('loginModal').style.display = 'flex';
+    switchAuthTab('login'); // Reset to Login tab by default on open
 }
 
 function closeLoginModal() {

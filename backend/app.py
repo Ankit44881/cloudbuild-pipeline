@@ -24,7 +24,7 @@ menu = [
 ]
 
 # -------------------------
-# Database Helper
+# Database Connection Helper
 # -------------------------
 def get_db_connection():
     return mysql.connector.connect(
@@ -35,23 +35,60 @@ def get_db_connection():
     )
 
 # -------------------------
-# Health Check API
+# Auto-Initialize Database Schema
+# -------------------------
+def init_db():
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        # Users table
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS users (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                name VARCHAR(100) NOT NULL,
+                phone VARCHAR(15) NOT NULL UNIQUE,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        """)
+
+        # Cart table
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS cart (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                user_id INT,
+                user_name VARCHAR(100),
+                user_phone VARCHAR(15),
+                item_name VARCHAR(100) NOT NULL,
+                price DECIMAL(10,2) NOT NULL,
+                quantity INT DEFAULT 1,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_phone) REFERENCES users(phone) ON DELETE CASCADE
+            );
+        """)
+
+        conn.commit()
+        cursor.close()
+        conn.close()
+        print("Database schema initialized successfully.", flush=True)
+    except Exception as e:
+        print(f"Schema Initialization Warning (will retry on query execution): {str(e)}", flush=True)
+
+# Run schema setup on backend launch
+init_db()
+
+# -------------------------
+# Health & General APIs
 # -------------------------
 @app.route("/")
 @app.route("/health")
 def health():
     return jsonify({"status": "UP"})
 
-# -------------------------
-# Menu API
-# -------------------------
 @app.route("/api/menu")
 def get_menu():
     return jsonify(menu)
 
-# -------------------------
-# Version API
-# -------------------------
 @app.route("/api/version")
 def version():
     return jsonify({
@@ -64,7 +101,7 @@ def version():
 # User Authentication APIs
 # -------------------------
 
-# 1. Existing User Login Route (Phone only)
+# 1. Existing User Login Route
 @app.route("/api/login", methods=["POST"])
 def login_user():
     data = request.get_json(silent=True) or {}
@@ -73,15 +110,14 @@ def login_user():
     if not phone:
         return jsonify({"error": "Phone number is required!"}), 400
 
+    conn = None
     try:
         conn = get_db_connection()
         cursor = conn.cursor(dictionary=True)
 
         cursor.execute("SELECT id, name, phone FROM users WHERE phone = %s", (phone,))
         user = cursor.fetchone()
-
         cursor.close()
-        conn.close()
 
         if not user:
             return jsonify({"error": "Account not found. Please register first."}), 404
@@ -96,9 +132,12 @@ def login_user():
     except Exception as e:
         print(f"Login Error: {str(e)}", flush=True)
         return jsonify({"error": "Database error", "details": str(e)}), 500
+    finally:
+        if conn and conn.is_connected():
+            conn.close()
 
 
-# 2. New User Registration Route (Name & Phone)
+# 2. New User Registration Route
 @app.route("/api/register", methods=["POST"])
 def register_user():
     data = request.get_json(silent=True) or {}
@@ -108,26 +147,22 @@ def register_user():
     if not name or not phone:
         return jsonify({"error": "Name and phone number are required!"}), 400
 
+    conn = None
     try:
         conn = get_db_connection()
         cursor = conn.cursor(dictionary=True)
 
-        # Check existing user
-        cursor.execute("SELECT id, name, phone FROM users WHERE phone = %s", (phone,))
+        cursor.execute("SELECT id FROM users WHERE phone = %s", (phone,))
         existing_user = cursor.fetchone()
 
         if existing_user:
             cursor.close()
-            conn.close()
             return jsonify({"error": "Phone number already registered. Please login."}), 409
 
-        # Register user without relying on optional email column
         cursor.execute("INSERT INTO users (name, phone) VALUES (%s, %s)", (name, phone))
         conn.commit()
         user_id = cursor.lastrowid
-
         cursor.close()
-        conn.close()
 
         return jsonify({
             "message": "Registration successful!",
@@ -139,6 +174,9 @@ def register_user():
     except Exception as e:
         print(f"Register Error: {str(e)}", flush=True)
         return jsonify({"error": "Database error", "details": str(e)}), 500
+    finally:
+        if conn and conn.is_connected():
+            conn.close()
 
 # -------------------------
 # Cart Operations APIs
@@ -156,6 +194,7 @@ def add_to_cart():
     if not user_phone or not item_name or price is None:
         return jsonify({"error": "user_phone, item_name, and price are required!"}), 400
 
+    conn = None
     try:
         conn = get_db_connection()
         cursor = conn.cursor(dictionary=True)
@@ -165,7 +204,6 @@ def add_to_cart():
 
         if not user:
             cursor.close()
-            conn.close()
             return jsonify({"error": "User not registered!"}), 401
 
         query = """
@@ -174,19 +212,22 @@ def add_to_cart():
         """
         cursor.execute(query, (user["id"], user["name"], user_phone, item_name, price, quantity))
         conn.commit()
-
         cursor.close()
-        conn.close()
+
         return jsonify({"message": f"Added {item_name} to cart!"}), 201
 
     except Exception as e:
         print(f"Add Cart Error: {str(e)}", flush=True)
         return jsonify({"error": "Database error", "details": str(e)}), 500
+    finally:
+        if conn and conn.is_connected():
+            conn.close()
 
 
-# 2. Get Cart Items
+# 2. Get Cart Items by Phone
 @app.route("/api/cart/<string:phone>", methods=["GET"])
 def get_cart_by_phone(phone):
+    conn = None
     try:
         conn = get_db_connection()
         cursor = conn.cursor(dictionary=True)
@@ -194,33 +235,38 @@ def get_cart_by_phone(phone):
         query = "SELECT * FROM cart WHERE user_phone = %s ORDER BY created_at DESC"
         cursor.execute(query, (phone,))
         cart_items = cursor.fetchall()
-
         cursor.close()
-        conn.close()
+
         return jsonify(cart_items), 200
 
     except Exception as e:
         print(f"Get Cart Error: {str(e)}", flush=True)
         return jsonify({"error": "Database error", "details": str(e)}), 500
+    finally:
+        if conn and conn.is_connected():
+            conn.close()
 
 
-# 3. Clear Cart (Checkout)
+# 3. Clear Cart / Place Order (Delete items by Phone)
 @app.route("/api/cart/<string:phone>", methods=["DELETE"])
 def clear_cart(phone):
+    conn = None
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
 
         cursor.execute("DELETE FROM cart WHERE user_phone = %s", (phone,))
         conn.commit()
-
         cursor.close()
-        conn.close()
+
         return jsonify({"message": "Cart cleared successfully!"}), 200
 
     except Exception as e:
         print(f"Clear Cart Error: {str(e)}", flush=True)
         return jsonify({"error": "Database error", "details": str(e)}), 500
+    finally:
+        if conn and conn.is_connected():
+            conn.close()
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)

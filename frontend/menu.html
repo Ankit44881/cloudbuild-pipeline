@@ -73,25 +73,42 @@
     </div>
 
     <!-- =========================
-            LOGIN MODAL
+            AUTH MODAL (LOGIN / REGISTER)
     ========================== -->
     <div id="loginModal" class="modal-overlay" style="display: none;">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>🔑 Login / Register</h3>
+                <h3>🔑 Account Access</h3>
                 <button class="close-btn" onclick="closeLoginModal()">✕</button>
             </div>
-            <div class="modal-body" style="padding: 15px 0;">
-                <form onsubmit="handleLogin(event)">
+            
+            <!-- Tab Switcher -->
+            <div style="display: flex; gap: 10px; margin: 15px 0; border-bottom: 2px solid #eee; padding-bottom: 10px;">
+                <button id="loginTabBtn" onclick="switchAuthTab('login')" style="flex: 1; padding: 8px; border: none; background: #ff6600; color: white; border-radius: 4px; cursor: pointer; font-weight: bold;">Login</button>
+                <button id="regTabBtn" onclick="switchAuthTab('register')" style="flex: 1; padding: 8px; border: 1px solid #ccc; background: #f5f5f5; color: #333; border-radius: 4px; cursor: pointer; font-weight: bold;">Register</button>
+            </div>
+
+            <div class="modal-body" style="padding: 10px 0;">
+                <!-- Existing User Login Form -->
+                <form id="loginFormSection" onsubmit="handleLogin(event)">
                     <div style="margin-bottom: 15px;">
-                        <label style="display:block; margin-bottom:5px; font-weight:bold;">Name</label>
-                        <input type="text" id="loginName" required placeholder="Enter your name" style="width:100%; padding:10px; border-radius:6px; border:1px solid #ccc;">
+                        <label style="display:block; margin-bottom:5px; font-weight:bold;">Phone Number</label>
+                        <input type="tel" id="loginPhone" required placeholder="Enter registered phone number" style="width:100%; padding:10px; border-radius:6px; border:1px solid #ccc;">
+                    </div>
+                    <button type="submit" class="checkout-btn">Login to Continue</button>
+                </form>
+
+                <!-- New User Registration Form -->
+                <form id="regFormSection" onsubmit="handleRegister(event)" style="display: none;">
+                    <div style="margin-bottom: 15px;">
+                        <label style="display:block; margin-bottom:5px; font-weight:bold;">Full Name</label>
+                        <input type="text" id="regName" required placeholder="Enter your full name" style="width:100%; padding:10px; border-radius:6px; border:1px solid #ccc;">
                     </div>
                     <div style="margin-bottom: 15px;">
                         <label style="display:block; margin-bottom:5px; font-weight:bold;">Phone Number</label>
-                        <input type="tel" id="loginPhone" required placeholder="Enter phone number" style="width:100%; padding:10px; border-radius:6px; border:1px solid #ccc;">
+                        <input type="tel" id="regPhone" required placeholder="Enter mobile number" style="width:100%; padding:10px; border-radius:6px; border:1px solid #ccc;">
                     </div>
-                    <button type="submit" class="checkout-btn">Login to Continue</button>
+                    <button type="submit" class="checkout-btn" style="background-color: #0284c7;">Create Account</button>
                 </form>
             </div>
         </div>
@@ -116,7 +133,7 @@
                     <span>Grand Total:</span>
                     <span id="cartTotalAmount">₹0.00</span>
                 </div>
-                <button class="checkout-btn" onclick="alert('Order Placed Successfully!')">Confirm Order 🚀</button>
+                <button class="checkout-btn" onclick="confirmOrder()">Confirm Order 🚀</button>
             </div>
         </div>
     </div>
