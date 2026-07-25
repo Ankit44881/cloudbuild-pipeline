@@ -40,7 +40,6 @@ steps:
   # Backend Build & Push
   - name: 'gcr.io/cloud-builders/docker'
     args:
-      - 'args'
       - 'build'
       - '-t'
       - '$_BACKEND_IMAGE:$SHORT_SHA'
