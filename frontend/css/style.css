@@ -47,6 +47,7 @@ nav{
 
 nav ul{
     display:flex;
+    align-items:center;
     list-style:none;
 }
 
@@ -219,6 +220,207 @@ nav ul li a:hover{
 }
 
 /* ==========================
+      DEPLOYMENT INFO
+========================== */
+
+.deployment-info{
+    margin-top:70px;
+}
+
+.deployment-info h2{
+    text-align:center;
+    font-size:38px;
+    margin-bottom:35px;
+    color:#222;
+}
+
+.deploy-card{
+    background:#1f2937;
+    color:white;
+    border-radius:20px;
+    padding:35px;
+    box-shadow:0 15px 30px rgba(0,0,0,.25);
+}
+
+.deploy-card p{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:15px 0;
+    border-bottom:1px solid rgba(255,255,255,.15);
+    font-size:18px;
+}
+
+.deploy-card p:last-child{
+    border-bottom:none;
+}
+
+.deploy-card span{
+    color:#00ff99;
+    font-weight:bold;
+    font-family:monospace;
+    word-break:break-word;
+}
+
+.deploy-card strong{
+    color:#f8fafc;
+}
+
+/* ==========================
+        CART & MODAL
+========================== */
+
+.cart-nav-btn {
+    background: #ff6600;
+    color: #ffffff;
+    border: none;
+    padding: 8px 18px;
+    font-size: 15px;
+    font-weight: bold;
+    border-radius: 30px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all .3s ease;
+    box-shadow: 0 4px 10px rgba(255, 102, 0, 0.25);
+}
+
+.cart-nav-btn:hover {
+    background: #e45a00;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(255, 102, 0, 0.4);
+}
+
+.cart-badge {
+    background: #222222;
+    color: #ffffff;
+    font-size: 12px;
+    border-radius: 50%;
+    padding: 2px 8px;
+    font-weight: bold;
+}
+
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.65);
+    backdrop-filter: blur(4px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+
+.modal-content {
+    background: #ffffff;
+    width: 90%;
+    max-width: 480px;
+    border-radius: 20px;
+    padding: 30px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+    animation: modalSlide 0.3s ease-out;
+}
+
+@keyframes modalSlide {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid #f0f0f0;
+    padding-bottom: 15px;
+}
+
+.modal-header h3 {
+    margin: 0;
+    font-size: 24px;
+    color: #222222;
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    font-size: 22px;
+    cursor: pointer;
+    color: #888888;
+    transition: color .2s;
+}
+
+.close-btn:hover {
+    color: #ff6600;
+}
+
+.cart-item-list {
+    list-style: none;
+    padding: 0;
+    margin: 20px 0;
+    max-height: 260px;
+    overflow-y: auto;
+}
+
+.cart-item-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px dashed #e0e0e0;
+}
+
+.cart-item-row:last-child {
+    border-bottom: none;
+}
+
+.modal-footer {
+    border-top: 2px solid #f0f0f0;
+    padding-top: 20px;
+    margin-top: 10px;
+}
+
+.total-section {
+    display: flex;
+    justify-content: space-between;
+    font-size: 20px;
+    font-weight: bold;
+    margin-bottom: 20px;
+    color: #222222;
+}
+
+.total-section #cartTotalAmount {
+    color: #ff6600;
+}
+
+.checkout-btn {
+    width: 100%;
+    background: #138808;
+    color: #ffffff;
+    padding: 14px;
+    border: none;
+    border-radius: 30px;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background .3s, transform .2s;
+}
+
+.checkout-btn:hover {
+    background: #0f6c06;
+    transform: translateY(-2px);
+}
+
+/* ==========================
         FOOTER
 ========================== */
 
@@ -243,10 +445,12 @@ footer{
 
     nav ul{
         margin-top:15px;
+        flex-wrap: wrap;
+        justify-content: center;
     }
 
     nav ul li{
-        margin:0 10px;
+        margin:10px 10px;
     }
 
     .hero h1{
@@ -260,73 +464,4 @@ footer{
     .container{
         padding:30px;
     }
-}
-
-/* ==========================
-      DEPLOYMENT INFO
-========================== */
-
-.deployment-info{
-    margin-top:70px;
-}
-
-.deployment-info h2{
-    text-align:center;
-    font-size:38px;
-    margin-bottom:35px;
-    color:#222;
-}
-
-.deploy-card{
-
-    background:#1f2937;
-
-    color:white;
-
-    border-radius:20px;
-
-    padding:35px;
-
-    box-shadow:0 15px 30px rgba(0,0,0,.25);
-
-}
-
-.deploy-card p{
-
-    display:flex;
-
-    justify-content:space-between;
-
-    align-items:center;
-
-    padding:15px 0;
-
-    border-bottom:1px solid rgba(255,255,255,.15);
-
-    font-size:18px;
-
-}
-
-.deploy-card p:last-child{
-
-    border-bottom:none;
-
-}
-
-.deploy-card span{
-
-    color:#00ff99;
-
-    font-weight:bold;
-
-    font-family:monospace;
-
-    word-break:break-word;
-
-}
-
-.deploy-card strong{
-
-    color:#f8fafc;
-
 }

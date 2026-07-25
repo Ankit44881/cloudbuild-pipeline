@@ -2,14 +2,10 @@
 <html lang="en">
 
 <head>
-
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
     <title>Chai Politics</title>
-
     <link rel="stylesheet" href="css/style.css">
-
 </head>
 
 <body>
@@ -19,23 +15,22 @@
     ========================== -->
 
     <nav>
-
         <div class="logo">
-
             <img src="images/logo.jpeg" alt="Chai Politics Logo">
-
             <span>CHAI POLITICS</span>
-
         </div>
 
         <ul>
-
             <li><a href="index.html" style="color:#ff6600;">Home</a></li>
             <li><a href="menu.html">Menu</a></li>
             <li><a href="deployment.html">Deployment</a></li>
-
+            <!-- CART BUTTON IN NAVBAR -->
+            <li>
+                <button class="cart-nav-btn" onclick="openCartModal()">
+                    🛒 Cart <span id="cartCountBadge" class="cart-badge">0</span>
+                </button>
+            </li>
         </ul>
-
     </nav>
 
     <!-- =========================
@@ -45,48 +40,127 @@
     <div class="container">
 
         <section class="hero">
-
-            <img src="images/logo.jpeg"
-                 class="hero-logo"
-                 alt="Chai Politics Logo">
+            <img src="images/logo.jpeg" class="hero-logo" alt="Chai Politics Logo">
 
             <h1>Welcome to Chai Politics</h1>
 
-            <p>
-                Where Every Sip Sparks a Debate ☕
-            </p>
+            <p>Where Every Sip Sparks a Debate ☕</p>
 
             <p style="margin-top:20px;font-size:20px;color:#444;">
                 A Production-Ready DevOps Demo deployed on Google Kubernetes Engine
             </p>
 
             <div style="margin-top:30px;">
-
-                <a href="menu.html" class="btn">
-                    🍔 Explore Menu
-                </a>
-
-                <a href="deployment.html"
-                   class="btn"
-                   style="margin-left:15px;">
-                    🚀 Deployment Details
-                </a>
-
+                <a href="menu.html" class="btn">🍔 Explore Menu</a>
+                <a href="deployment.html" class="btn" style="margin-left:15px;">🚀 Deployment Details</a>
             </div>
-
         </section>
 
-        <p style="
-            margin-top:35px;
-            text-align:center;
-            color:#666;
-            font-size:18px;">
-
-            Powered by Docker • Google Kubernetes Engine • GitHub Actions • Google Cloud Platform
-
+        <p style="margin-top:35px;text-align:center;color:#666;font-size:18px;">
+            Powered by Docker • Google Kubernetes Engine • Google Cloud Build • Google Cloud Platform
         </p>
 
     </div>
+
+    <!-- =========================
+            CART POPUP MODAL
+    ========================== -->
+
+    <div id="cartModal" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>🛍️ Final Cart Items</h3>
+                <button class="close-btn" onclick="closeCartModal()">✕</button>
+            </div>
+
+            <div class="modal-body">
+                <div id="cartLoading" style="text-align:center; padding:10px;">Loading cart...</div>
+                <ul id="cartItemsList" class="cart-item-list">
+                    <!-- Dynamic Cart Rows Will Render Here -->
+                </ul>
+            </div>
+
+            <div class="modal-footer">
+                <div class="total-section">
+                    <span>Grand Total:</span>
+                    <span id="cartTotalAmount">₹0.00</span>
+                </div>
+                <button class="checkout-btn" onclick="alert('Order Placed Successfully!')">Confirm Order 🚀</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- =========================
+            CART SCRIPT
+    ========================== -->
+    <script>
+        async function fetchCartData() {
+            try {
+                // Backend GET request for MySQL persistent cart items
+                const res = await fetch('/api/cart');
+                if (!res.ok) throw new Error("Failed to fetch cart");
+                
+                const data = await res.json();
+                renderCartUI(data);
+            } catch (err) {
+                console.error("Cart fetch error:", err);
+                document.getElementById('cartLoading').innerText = "Unable to load cart items.";
+            }
+        }
+
+        function renderCartUI(items) {
+            const list = document.getElementById('cartItemsList');
+            const badge = document.getElementById('cartCountBadge');
+            const total = document.getElementById('cartTotalAmount');
+            const loading = document.getElementById('cartLoading');
+
+            loading.style.display = 'none';
+            list.innerHTML = '';
+
+            if (!items || items.length === 0) {
+                list.innerHTML = '<li style="text-align:center; padding:15px; color:#666;">Your cart is empty!</li>';
+                badge.innerText = '0';
+                total.innerText = '₹0.00';
+                return;
+            }
+
+            badge.innerText = items.length;
+            let sum = 0;
+
+            items.forEach(item => {
+                const itemPrice = parseFloat(item.price || 0);
+                const itemQty = item.quantity || 1;
+                sum += itemPrice * itemQty;
+
+                const li = document.createElement('li');
+                li.className = 'cart-item-row';
+                li.innerHTML = `
+                    <div style="display:flex; flex-direction:column;">
+                        <strong style="font-size:16px;">${item.item_name || item.name}</strong>
+                        <small style="color:#777;">User: ${item.user_name || 'Guest'}</small>
+                    </div>
+                    <div>
+                        <span style="font-weight:bold; color:#ff6600;">₹${itemPrice.toFixed(2)}</span>
+                    </div>
+                `;
+                list.appendChild(li);
+            });
+
+            total.innerText = '₹' + sum.toFixed(2);
+        }
+
+        function openCartModal() {
+            document.getElementById('cartModal').style.display = 'flex';
+            fetchCartData();
+        }
+
+        function closeCartModal() {
+            document.getElementById('cartModal').style.display = 'none';
+        }
+
+        // Auto-fetch badge count on initial page load
+        window.addEventListener('DOMContentLoaded', fetchCartData);
+    </script>
 
 </body>
 
