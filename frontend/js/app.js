@@ -1,4 +1,57 @@
 // ==========================================
+// 0. On-Screen UI Error Display Helpers
+// ==========================================
+function showAuthError(message) {
+    const errorBox = document.getElementById('authErrorMsg');
+    if (errorBox) {
+        errorBox.innerText = message;
+        errorBox.style.display = 'block';
+    }
+}
+
+function clearAuthError() {
+    const errorBox = document.getElementById('authErrorMsg');
+    if (errorBox) {
+        errorBox.innerText = '';
+        errorBox.style.display = 'none';
+    }
+}
+
+// Detailed Phone Validation Logic
+function validateIndianPhone(phone) {
+    if (!phone) {
+        return { valid: false, message: "⚠️ Phone number is required. Please enter your phone number." };
+    }
+
+    // Check for Alphabets
+    if (/[a-zA-Z]/.test(phone)) {
+        return { valid: false, message: "⚠️ Alphabets are not allowed! Please enter numbers only." };
+    }
+
+    // Check for Special Characters or Spaces
+    if (/[^\d]/.test(phone)) {
+        return { valid: false, message: "⚠️ Special characters or spaces are not allowed! Use numbers only." };
+    }
+
+    // Check for Short Length
+    if (phone.length < 10) {
+        return { valid: false, message: `⚠️ Phone number is too short (${phone.length}/10 digits). Please enter a full 10-digit number.` };
+    }
+
+    // Check for Excess Length
+    if (phone.length > 10) {
+        return { valid: false, message: `⚠️ Phone number is too long (${phone.length} digits). Please enter only a 10-digit number.` };
+    }
+
+    // Check for valid Indian starting digit (6, 7, 8, or 9)
+    if (!/^[6-9]/.test(phone)) {
+        return { valid: false, message: "⚠️ Invalid Indian phone number! Must start with 6, 7, 8, or 9." };
+    }
+
+    return { valid: true };
+}
+
+// ==========================================
 // 1. Session and Cart State Helper
 // ==========================================
 function getUserSession() {
@@ -53,6 +106,8 @@ function updateNavbarUI() {
 // 4. Modal Tab Switcher (Login vs Register)
 // ==========================================
 function switchAuthTab(tab) {
+    clearAuthError(); // Clear any previous errors on tab change
+
     const loginForm = document.getElementById('loginFormSection');
     const regForm = document.getElementById('regFormSection');
     const loginBtn = document.getElementById('loginTabBtn');
@@ -90,10 +145,14 @@ function switchAuthTab(tab) {
 // ==========================================
 async function handleLogin(event) {
     event.preventDefault();
+    clearAuthError();
+
     const phone = document.getElementById('loginPhone').value.trim();
 
-    if (!phone) {
-        alert("Please enter phone number");
+    // On-Screen Validation Check
+    const check = validateIndianPhone(phone);
+    if (!check.valid) {
+        showAuthError(check.message);
         return;
     }
 
@@ -114,11 +173,11 @@ async function handleLogin(event) {
             fetchCartCount();
             alert(`Welcome back, ${data.name}!`);
         } else {
-            alert(data.error || "Login failed");
+            showAuthError(data.error || "Login failed");
         }
     } catch (err) {
         console.error("Login Error:", err);
-        alert("Server error during login.");
+        showAuthError("Server error during login. Please try again.");
     }
 }
 
@@ -127,11 +186,20 @@ async function handleLogin(event) {
 // ==========================================
 async function handleRegister(event) {
     event.preventDefault();
+    clearAuthError();
+
     const name = document.getElementById('regName').value.trim();
     const phone = document.getElementById('regPhone').value.trim();
 
-    if (!name || !phone) {
-        alert("Please enter both Name and Phone number");
+    if (!name) {
+        showAuthError("⚠️ Please enter your Full Name.");
+        return;
+    }
+
+    // On-Screen Validation Check
+    const check = validateIndianPhone(phone);
+    if (!check.valid) {
+        showAuthError(check.message);
         return;
     }
 
@@ -152,11 +220,11 @@ async function handleRegister(event) {
             fetchCartCount();
             alert("🎉 Account created successfully!");
         } else {
-            alert(data.error || "Registration failed");
+            showAuthError(data.error || "Registration failed");
         }
     } catch (err) {
         console.error("Registration Error:", err);
-        alert("Server error during registration.");
+        showAuthError("Server error during registration. Please try again.");
     }
 }
 
@@ -301,10 +369,12 @@ function closeCartModal() {
 }
 
 function openLoginModal() {
+    clearAuthError(); // Clear any existing errors when opening modal
     document.getElementById('loginModal').style.display = 'flex';
-    switchAuthTab('login'); // Reset to Login tab by default on open
+    switchAuthTab('login'); // Default to Login tab on open
 }
 
 function closeLoginModal() {
     document.getElementById('loginModal').style.display = 'none';
+    clearAuthError();
 }

@@ -88,12 +88,15 @@
                 <button id="regTabBtn" onclick="switchAuthTab('register')" style="flex: 1; padding: 8px; border: 1px solid #ccc; background: #f5f5f5; color: #333; border-radius: 4px; cursor: pointer; font-weight: bold;">Register</button>
             </div>
 
-            <div class="modal-body" style="padding: 10px 0;">
+            <!-- ON-SCREEN ERROR CONTAINER -->
+            <div id="authErrorMsg" style="display: none; background-color: #ffebe9; color: #d93025; padding: 10px; border-radius: 6px; border: 1px solid #ffcdd2; margin-bottom: 15px; font-size: 13px; text-align: center; font-weight: bold;"></div>
+
+            <div class="modal-body" style="padding: 5px 0 10px 0;">
                 <!-- Existing User Login Form -->
                 <form id="loginFormSection" onsubmit="handleLogin(event)">
                     <div style="margin-bottom: 15px;">
                         <label style="display:block; margin-bottom:5px; font-weight:bold;">Phone Number</label>
-                        <input type="tel" id="loginPhone" required placeholder="Enter registered phone number" style="width:100%; padding:10px; border-radius:6px; border:1px solid #ccc;">
+                        <input type="tel" id="loginPhone" placeholder="Enter registered phone number" style="width:100%; padding:10px; border-radius:6px; border:1px solid #ccc;">
                     </div>
                     <button type="submit" class="checkout-btn">Login to Continue</button>
                 </form>
@@ -102,11 +105,11 @@
                 <form id="regFormSection" onsubmit="handleRegister(event)" style="display: none;">
                     <div style="margin-bottom: 15px;">
                         <label style="display:block; margin-bottom:5px; font-weight:bold;">Full Name</label>
-                        <input type="text" id="regName" required placeholder="Enter your full name" style="width:100%; padding:10px; border-radius:6px; border:1px solid #ccc;">
+                        <input type="text" id="regName" placeholder="Enter your full name" style="width:100%; padding:10px; border-radius:6px; border:1px solid #ccc;">
                     </div>
                     <div style="margin-bottom: 15px;">
                         <label style="display:block; margin-bottom:5px; font-weight:bold;">Phone Number</label>
-                        <input type="tel" id="regPhone" required placeholder="Enter mobile number" style="width:100%; padding:10px; border-radius:6px; border:1px solid #ccc;">
+                        <input type="tel" id="regPhone" placeholder="Enter mobile number" style="width:100%; padding:10px; border-radius:6px; border:1px solid #ccc;">
                     </div>
                     <button type="submit" class="checkout-btn" style="background-color: #0284c7;">Create Account</button>
                 </form>
