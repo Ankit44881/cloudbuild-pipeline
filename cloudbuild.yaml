@@ -40,6 +40,7 @@ steps:
   # Backend Build & Push
   - name: 'gcr.io/cloud-builders/docker'
     args:
+      - 'args'
       - 'build'
       - '-t'
       - '$_BACKEND_IMAGE:$SHORT_SHA'
@@ -51,24 +52,32 @@ steps:
       - '$_BACKEND_IMAGE:$SHORT_SHA'
 
   # ---------------------------------------------------------
-  # 3. KUBERNETES DEPLOYMENT & OBSERVABILITY
+  # 3. KUBERNETES DEPLOYMENT & STATEFUL INFRASTRUCTURE
   # ---------------------------------------------------------
   - name: 'gcr.io/cloud-builders/gcloud'
     entrypoint: 'bash'
     args:
       - '-c'
       - |
-        # 1. Fetch Cluster Credentials once
+        # 1. Fetch Cluster Credentials
         gcloud container clusters get-credentials $_CLUSTER --zone $_LOCATION --project $PROJECT_ID
         
-        # 2. Apply Base Manifests (Idempotent - syncs ports, env vars, etc.)
-        kubectl apply -f kubernetes/
+        # 2. Apply Kubernetes Manifests (Secrets, Services, StatefulSets, Deployments)
+        kubectl apply -f kubernetes/ --recursive
 
-        # 3. Update Deployment Images directly using substitution variables
+        # 3. Wait for MySQL StatefulSet readiness before rolling out backend
+        echo "=== WAITING FOR MYSQL STATEFULSET ==="
+        kubectl rollout status statefulset/mysql --timeout=180s
+
+        # 4. Auto-initialize Database Schema if needed
+        echo "=== CHECKING & INITALIZING DATABASE SCHEMA ==="
+        kubectl exec -i mysql-0 -- mysql -u chai_admin -pUserPassword123 chaipolitics_db < database/schema.sql || true
+
+        # 5. Update Deployments with new container images
         kubectl set image deployment/frontend frontend=$_FRONTEND_IMAGE:$SHORT_SHA
         kubectl set image deployment/backend backend=$_BACKEND_IMAGE:$SHORT_SHA
 
-        # 4. Wait for Rollouts to complete successfully
+        # 6. Wait for App Rollouts to complete
         kubectl rollout status deployment/frontend --timeout=120s
         kubectl rollout status deployment/backend --timeout=120s
 
@@ -78,13 +87,13 @@ steps:
         echo "Backend Image:  $(kubectl get deployment backend -o jsonpath='{.spec.template.spec.containers[0].image}')"
         echo "------------------------------------------"
 
-        # 5. Print Live Resources Status
+        # 7. Print Live Resources Status
         echo "=== LIVE PODS ==="
         kubectl get pods -o wide
-        echo "=== LIVE SERVICES ==="
-        kubectl get svc
-        echo "=== LIVE INGRESS ==="
-        kubectl get ingress
+        echo "=== LIVE PVC & STATEFULSETS ==="
+        kubectl get pvc,statefulset
+        echo "=== LIVE SERVICES & INGRESS ==="
+        kubectl get svc,ingress
 
 substitutions:
   _LOCATION: 'us-central1-a'
