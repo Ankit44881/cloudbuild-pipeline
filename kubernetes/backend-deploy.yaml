@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: backend  # Deployment name changed to backend
+  name: backend
 spec:
   replicas: 2
   selector:
@@ -13,7 +13,28 @@ spec:
         app: chai-backend
     spec:
       containers:
-      - name: backend  # Container name changed to backend
+      - name: backend
         image: us-central1-docker.pkg.dev/project-e88d1c23-e44c-4d58-8dd/om-app-repo/backend-image:latest
         ports:
         - containerPort: 5000
+        env:
+        # 1. DB Host (Headless Service ka direct internal DNS)
+        - name: DB_HOST
+          value: "mysql-0.mysql-service"
+
+        # 2. Secret se dynamic credentials inject karne ke liye
+        - name: DB_NAME
+          valueFrom:
+            secretKeyRef:
+              name: mysql-secret
+              key: MYSQL_DATABASE
+        - name: DB_USER
+          valueFrom:
+            secretKeyRef:
+              name: mysql-secret
+              key: MYSQL_USER
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mysql-secret
+              key: MYSQL_PASSWORD
