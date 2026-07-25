@@ -63,6 +63,54 @@ def version():
     })
 
 # -------------------------
+# User Login / Registration API
+# -------------------------
+@app.route("/api/login", methods=["POST"])
+def login_user():
+    data = request.get_json()
+    if not data:
+        return jsonify({"error": "Invalid payload!"}), 400
+
+    name = data.get("name")
+    phone = data.get("phone")
+    email = data.get("email", "")
+
+    if not name or not phone:
+        return jsonify({"error": "Name and phone are required!"}), 400
+
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+
+        # Check if user already exists by unique phone number
+        cursor.execute("SELECT * FROM users WHERE phone = %s", (phone,))
+        user = cursor.fetchone()
+
+        if not user:
+            # Register new user
+            cursor.execute(
+                "INSERT INTO users (name, phone, email) VALUES (%s, %s, %s)",
+                (name, phone, email)
+            )
+            conn.commit()
+            user_id = cursor.lastrowid
+        else:
+            user_id = user["id"]
+
+        cursor.close()
+        conn.close()
+
+        return jsonify({
+            "message": "Login successful!",
+            "user_id": user_id,
+            "name": name,
+            "phone": phone
+        }), 200
+
+    except Exception as e:
+        return jsonify({"error": "Database error", "details": str(e)}), 500
+
+# -------------------------
 # Cart APIs (Database Driven)
 # -------------------------
 
@@ -74,44 +122,52 @@ def add_to_cart():
     if not data:
         return jsonify({"error": "Invalid payload!"}), 400
 
-    user_name = data.get("user_name")
-    user_email = data.get("user_email")
     user_phone = data.get("user_phone")
     item_name = data.get("item_name")
     price = data.get("price")
     quantity = data.get("quantity", 1)
 
     # Validation
-    if not user_name or not user_email or not user_phone or not item_name or not price:
-        return jsonify({"error": "user_name, user_email, user_phone, item_name, and price are required!"}), 400
+    if not user_phone or not item_name or not price:
+        return jsonify({"error": "user_phone, item_name, and price are required!"}), 400
 
-    try:
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        
-        query = """
-            INSERT INTO cart (user_name, user_email, user_phone, item_name, price, quantity)
-            VALUES (%s, %s, %s, %s, %s, %s)
-        """
-        cursor.execute(query, (user_name, user_email, user_phone, item_name, price, quantity))
-        conn.commit()
-        
-        cursor.close()
-        conn.close()
-        return jsonify({"message": f"Item added to cart successfully for {user_name}!"}), 201
-
-    except Exception as e:
-        return jsonify({"error": "Database error", "details": str(e)}), 500
-
-# 2. Get Cart Items by User Email
-@app.route("/api/cart/<string:email>", methods=["GET"])
-def get_cart_by_email(email):
     try:
         conn = get_db_connection()
         cursor = conn.cursor(dictionary=True)
         
-        query = "SELECT * FROM cart WHERE user_email = %s ORDER BY created_at DESC"
-        cursor.execute(query, (email,))
+        # Verify user exists using phone number
+        cursor.execute("SELECT id, name FROM users WHERE phone = %s", (user_phone,))
+        user = cursor.fetchone()
+
+        if not user:
+            cursor.close()
+            conn.close()
+            return jsonify({"error": "User not registered or logged in!"}), 401
+
+        # Insert item into cart linked with user_id
+        query = """
+            INSERT INTO cart (user_id, user_name, user_phone, item_name, price, quantity)
+            VALUES (%s, %s, %s, %s, %s, %s)
+        """
+        cursor.execute(query, (user["id"], user["name"], user_phone, item_name, price, quantity))
+        conn.commit()
+        
+        cursor.close()
+        conn.close()
+        return jsonify({"message": f"Item added to cart successfully for {user['name']}!"}), 201
+
+    except Exception as e:
+        return jsonify({"error": "Database error", "details": str(e)}), 500
+
+# 2. Get Cart Items by User Phone Number
+@app.route("/api/cart/<string:phone>", methods=["GET"])
+def get_cart_by_phone(phone):
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        
+        query = "SELECT * FROM cart WHERE user_phone = %s ORDER BY created_at DESC"
+        cursor.execute(query, (phone,))
         cart_items = cursor.fetchall()
         
         cursor.close()
