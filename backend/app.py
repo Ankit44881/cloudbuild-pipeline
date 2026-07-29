@@ -1,10 +1,20 @@
 import os
+import re
 import mysql.connector
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 
 app = Flask(__name__)
 CORS(app)  # Allow cross-origin requests
+
+# -------------------------
+# Helper Functions & Validation
+# -------------------------
+def is_valid_indian_phone(phone: str) -> bool:
+    """Validate 10-digit Indian phone numbers starting with 6, 7, 8, or 9"""
+    if not phone or not isinstance(phone, str):
+        return False
+    return bool(re.match(r"^[6-9]\d{9}$", phone))
 
 # -------------------------
 # Menu Data
@@ -83,7 +93,7 @@ init_db()
 @app.route("/")
 @app.route("/health")
 def health():
-    return jsonify({"status": "UP"})
+    return jsonify({"status": "healthy"}), 200
 
 @app.route("/api/menu")
 def get_menu():
@@ -107,8 +117,8 @@ def login_user():
     data = request.get_json(silent=True) or {}
     phone = data.get("phone", "").strip()
 
-    if not phone:
-        return jsonify({"error": "Phone number is required!"}), 400
+    if not phone or not is_valid_indian_phone(phone):
+        return jsonify({"error": "A valid 10-digit phone number is required!"}), 400
 
     conn = None
     try:
@@ -144,8 +154,11 @@ def register_user():
     name = data.get("name", "").strip()
     phone = data.get("phone", "").strip()
 
-    if not name or not phone:
-        return jsonify({"error": "Name and phone number are required!"}), 400
+    if not name:
+        return jsonify({"error": "Name is required!"}), 400
+
+    if not phone or not is_valid_indian_phone(phone):
+        return jsonify({"error": "A valid 10-digit phone number is required!"}), 400
 
     conn = None
     try:
@@ -191,8 +204,8 @@ def add_to_cart():
     price = data.get("price")
     quantity = data.get("quantity", 1)
 
-    if not user_phone or not item_name or price is None:
-        return jsonify({"error": "user_phone, item_name, and price are required!"}), 400
+    if not user_phone or not is_valid_indian_phone(user_phone) or not item_name or price is None:
+        return jsonify({"error": "Valid user_phone, item_name, and price are required!"}), 400
 
     conn = None
     try:
@@ -227,6 +240,9 @@ def add_to_cart():
 # 2. Get Cart Items by Phone
 @app.route("/api/cart/<string:phone>", methods=["GET"])
 def get_cart_by_phone(phone):
+    if not is_valid_indian_phone(phone):
+        return jsonify({"error": "Invalid phone number requested"}), 400
+
     conn = None
     try:
         conn = get_db_connection()
@@ -250,6 +266,9 @@ def get_cart_by_phone(phone):
 # 3. Clear Cart / Place Order (Delete items by Phone)
 @app.route("/api/cart/<string:phone>", methods=["DELETE"])
 def clear_cart(phone):
+    if not is_valid_indian_phone(phone):
+        return jsonify({"error": "Invalid phone number requested"}), 400
+
     conn = None
     try:
         conn = get_db_connection()
