@@ -291,5 +291,10 @@ def clear_cart(phone):
         if conn and conn.is_connected():
             conn.close()
 
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+if __name__ == '__main__':
+    # Environment variable se host read karo, default 127.0.0.1 rakho
+    host = os.getenv('HOST', '127.0.0.1')
+    port = int(os.getenv('PORT', 5000))
+    debug = os.getenv('FLASK_DEBUG', 'False').lower() in ['true', '1']
+    
+    app.run(host=host, port=port, debug=debug)
