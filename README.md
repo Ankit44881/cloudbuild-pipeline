@@ -1,8 +1,8 @@
 # Chai Politics - Order Management Application
 
-This is a simple Order Management application created for **Chai Politics**. I built this project to practice deploying a real application on Google Cloud using Docker, Kubernetes and Cloud Build.
+This project is a simple Order Management Application developed for **Chai Politics**. I created it to get hands-on experience with building and deploying a complete containerized application on **Google Cloud Platform (GCP)**.
 
-The application has a frontend, a Python Flask backend and a MySQL database. The complete application is deployed on **Google Kubernetes Engine (GKE)**.
+The application consists of a frontend, a Python Flask backend and a MySQL database. Each component runs inside its own Docker container and is deployed on a **Google Kubernetes Engine (GKE)** cluster. Along with application deployment, the project also focuses on automating the CI/CD process using **Google Cloud Build**.
 
 ---
 
@@ -12,63 +12,64 @@ The application has a frontend, a Python Flask backend and a MySQL database. The
 * HTML, CSS and JavaScript
 * MySQL
 * Docker
-* Kubernetes
-* Google Kubernetes Engine (GKE)
-* Google Artifact Registry
+* Kubernetes (GKE)
 * Google Cloud Build
+* Google Artifact Registry
 * SonarQube
+* pytest
+* pytest-cov
 
 ---
 
 ## Project Structure
 
-```
+```text
 cloudbuild-pipeline/
 │
-├── backend/
-├── frontend/
-├── database/
-├── kubernetes/
-├── scripts/
-├── cloudbuild.yaml
-├── rollback.yaml
-├── sonar-project.properties
+├── backend/                  # Flask application and unit tests
+├── frontend/                 # Frontend application
+├── database/                 # MySQL schema
+├── kubernetes/               # Kubernetes manifests
+├── scripts/                  # GKE and Artifact Registry setup scripts
+├── cloudbuild.yaml           # Main Cloud Build pipeline
+├── rollback.yaml             # Rollback pipeline
+├── sonar-project.properties  # SonarQube configuration
 └── README.md
 ```
 
 ---
 
-## What this project does
+## Application Features
 
-* Shows the Chai Politics menu
-* Accepts customer orders
-* Stores data in MySQL
-* Runs frontend and backend in separate Docker containers
-* Deploys the application to GKE
-* Uses Cloud Build to automate deployment
-* Supports rollback to a previous deployment when required
+* Displays the Chai Politics menu.
+* Allows customers to place orders.
+* Stores application data in a MySQL database.
+* Frontend and backend run as separate Docker containers.
+* Kubernetes manages application deployment and scaling.
+* Cloud Build automates the build and deployment process.
+* Supports rollback to a previous application version when required.
 
 ---
 
-## Infrastructure
+## Infrastructure Setup
 
-The setup script creates the required cloud resources automatically.
+To avoid creating cloud resources manually every time, I created simple shell scripts that automate the setup and cleanup process.
 
-Resources created:
-
-* GKE Cluster
-* Artifact Registry
-* Docker authentication
-* Kubernetes cluster credentials
-
-Run:
+Create the required infrastructure:
 
 ```bash
-chmod +x scripts/setup.sh
+chmod +x scripts/setup.sh scripts/cleanup.sh
 ./scripts/setup.sh
 ```
 
-To remove everything after testing:
+This script creates:
+
+* Google Kubernetes Engine (GKE) Cluster
+* Google Artifact Registry Repository
+* Docker authentication
+* Kubernetes cluster credentials
+
+To remove the resources after testing:
 
 ```bash
 ./scripts/cleanup.sh
@@ -76,37 +77,44 @@ To remove everything after testing:
 
 ---
 
-## Deployment Flow
+## CI/CD Pipeline
 
-Whenever I push changes to the repository, Cloud Build performs the deployment steps automatically.
+Whenever changes are pushed to the repository, Cloud Build performs the following steps automatically:
 
-* Build Docker image
-* Push image to Artifact Registry
-* Update Kubernetes deployment
-* Deploy the latest image to GKE
+1. Runs unit tests using **pytest**.
+2. Generates code coverage using **pytest-cov**.
+3. Performs code quality analysis with **SonarQube**.
+4. Builds Docker images.
+5. Pushes the images to **Google Artifact Registry**.
+6. Updates the Kubernetes deployment with the latest image.
+7. Deploys the application to **Google Kubernetes Engine (GKE)**.
 
-If required, the rollback pipeline can deploy an older image.
+If required, the rollback pipeline can redeploy a previously working image.
 
 ---
 
-## Why I built this project
+## Why I Built This Project
 
-The main goal of this project was to get hands-on experience with Docker, Kubernetes and Google Cloud. Instead of deploying a simple demo application, I wanted to use a project based on my own business idea, **Chai Politics**, so that the learning felt more practical.
+I wanted to learn how a real-world application is deployed on Google Cloud instead of deploying a simple sample application. Since I am also working on my own food business idea, **Chai Politics**, I decided to use it as the project theme.
+
+This project helped me understand Docker, Kubernetes, Cloud Build, container registries, automated deployments, unit testing and code quality checks in a practical way.
 
 ---
 
 ## Future Improvements
 
-In the future I plan to add:
+The next improvements I plan to make are:
 
-* Trivy image scanning
-* OWASP ZAP security testing
-* Monitoring with Prometheus and Grafana
-* Helm charts
-* GitOps using Argo CD
+* Trivy for container image vulnerability scanning.
+* OWASP ZAP for automated DAST testing.
+* Prometheus and Grafana for monitoring.
+* Helm charts for Kubernetes deployments.
+* Argo CD for GitOps-based continuous deployment.
 
 ---
 
 ## Author
 
 **Ankit Raj**
+
+Cloud | DevOps | DevSecOps Enthusiast
