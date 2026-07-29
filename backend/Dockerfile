@@ -2,18 +2,18 @@ FROM python:3.10-slim
 
 WORKDIR /app
 
-# Non-root user create karo for Least-Privilege Security Principle
+# Create non-root user
 RUN groupadd -r appgroup && useradd -r -g appgroup appuser
 
+# Copy requirements first (for efficient Docker caching)
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY . .
+# Copy ONLY necessary application files (Avoids "COPY . ." security warning)
+COPY app.py .
 
-# Ownership change to non-root user
+# Ownership change & switch user
 RUN chown -R appuser:appgroup /app
-
-# Switch to non-root user
 USER appuser
 
 EXPOSE 5000
