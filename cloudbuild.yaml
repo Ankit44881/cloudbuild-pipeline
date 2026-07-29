@@ -1,6 +1,6 @@
 steps:
   # ---------------------------------------------------------
-  # 1. AUTOMATED UNIT TESTS (pytest)
+  # 1. AUTOMATED UNIT TESTS & COVERAGE REPORT
   # ---------------------------------------------------------
   - name: 'python:3.10-slim'
     id: 'Run Unit Tests'
@@ -10,8 +10,8 @@ steps:
     args:
       - '-c'
       - |
-        pip install -r backend/requirements.txt pytest
-        pytest backend/tests/ --doctest-modules
+        pip install -r backend/requirements.txt pytest pytest-cov
+        pytest backend/tests/ --cov=backend --cov-report=xml:coverage.xml
 
   # ---------------------------------------------------------
   # 2. SONARQUBE SAST SCAN
@@ -21,10 +21,7 @@ steps:
     env:
       - 'SONAR_HOST_URL=http://35.192.204.99:9000'
       - 'SONAR_TOKEN=$_SONAR_TOKEN'
-    args:
-      - '-Dsonar.projectKey=chai-politics'
-      - '-Dsonar.sources=backend'
-      - '-Dsonar.exclusions=**/venv/**,**/tests/**'
+    # Extra flags hata diye hain kyunki sonar-project.properties sab handle karega!
 
   # ---------------------------------------------------------
   # 3. FRONTEND: Generate Dynamic version.json
