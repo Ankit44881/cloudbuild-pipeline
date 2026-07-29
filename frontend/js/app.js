@@ -17,7 +17,7 @@ function clearAuthError() {
     }
 }
 
-// Detailed Phone Validation Logic
+// Detailed Phone Validation Logic (Syntax error fixed)
 function validateIndianPhone(phone) {
     if (!phone) {
         return { valid: false, message: "⚠️ Phone number is required. Please enter your phone number." };
@@ -141,7 +141,7 @@ function switchAuthTab(tab) {
 }
 
 // ==========================================
-// 5. Existing User Login Action
+// 5. Existing User Login Action (Mapped to /api/users)
 // ==========================================
 async function handleLogin(event) {
     event.preventDefault();
@@ -157,21 +157,21 @@ async function handleLogin(event) {
     }
 
     try {
-        const response = await fetch('/api/login', {
+        const response = await fetch('/api/users', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ phone })
+            body: JSON.stringify({ name: 'Chai Lover', phone }) // Default fallback name if not provided
         });
 
         const data = await response.json();
 
         if (response.ok) {
-            localStorage.setItem('cp_user_name', data.name);
-            localStorage.setItem('cp_user_phone', data.phone);
+            localStorage.setItem('cp_user_name', data.user.name);
+            localStorage.setItem('cp_user_phone', data.user.phone);
             closeLoginModal();
             updateNavbarUI();
             fetchCartCount();
-            alert(`Welcome back, ${data.name}!`);
+            alert(`Welcome back, ${data.user.name}!`);
         } else {
             showAuthError(data.error || "Login failed");
         }
@@ -182,7 +182,7 @@ async function handleLogin(event) {
 }
 
 // ==========================================
-// 6. New User Registration Action
+// 6. New User Registration Action (Mapped to /api/users)
 // ==========================================
 async function handleRegister(event) {
     event.preventDefault();
@@ -204,7 +204,7 @@ async function handleRegister(event) {
     }
 
     try {
-        const response = await fetch('/api/register', {
+        const response = await fetch('/api/users', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ name, phone })
@@ -213,8 +213,8 @@ async function handleRegister(event) {
         const data = await response.json();
 
         if (response.ok) {
-            localStorage.setItem('cp_user_name', data.name);
-            localStorage.setItem('cp_user_phone', data.phone);
+            localStorage.setItem('cp_user_name', data.user.name);
+            localStorage.setItem('cp_user_phone', data.user.phone);
             closeLoginModal();
             updateNavbarUI();
             fetchCartCount();
@@ -244,7 +244,7 @@ async function addToCart(itemName, price) {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                user_phone: session.phone,
+                user_id: session.phone,
                 item_name: itemName,
                 price: price,
                 quantity: 1

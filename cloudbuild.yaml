@@ -1,6 +1,31 @@
 steps:
   # ---------------------------------------------------------
-  # 1. FRONTEND: Generate Dynamic version.json
+  # 1. AUTOMATED UNIT TESTS (pytest)
+  # ---------------------------------------------------------
+  - name: 'python:3.10-slim'
+    id: 'Run Unit Tests'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        pip install -r backend/requirements.txt pytest
+        pytest backend/tests/ --doctest-modules
+
+  # ---------------------------------------------------------
+  # 2. SONARQUBE SAST SCAN
+  # ---------------------------------------------------------
+  - name: 'sonarsource/sonar-scanner-cli:latest'
+    id: 'SonarQube Scan'
+    env:
+      - 'SONAR_HOST_URL=http://35.192.204.99:9000'
+      - 'SONAR_TOKEN=$_SONAR_TOKEN'
+    args:
+      - '-Dsonar.projectKey=chai-politics'
+      - '-Dsonar.sources=backend'
+      - '-Dsonar.exclusions=**/venv/**,**/tests/**'
+
+  # ---------------------------------------------------------
+  # 3. FRONTEND: Generate Dynamic version.json
   # ---------------------------------------------------------
   - name: 'gcr.io/cloud-builders/gcloud'
     entrypoint: 'bash'
@@ -22,7 +47,7 @@ steps:
         EOF
 
   # ---------------------------------------------------------
-  # 2. BUILD & PUSH DOCKER IMAGES
+  # 4. BUILD & PUSH DOCKER IMAGES
   # ---------------------------------------------------------
   # Frontend Build & Push
   - name: 'gcr.io/cloud-builders/docker'
@@ -51,7 +76,7 @@ steps:
       - '$_BACKEND_IMAGE:$SHORT_SHA'
 
   # ---------------------------------------------------------
-  # 3. KUBERNETES DEPLOYMENT & STATEFUL INFRASTRUCTURE
+  # 5. KUBERNETES DEPLOYMENT & STATEFUL INFRASTRUCTURE
   # ---------------------------------------------------------
   - name: 'gcr.io/cloud-builders/gcloud'
     entrypoint: 'bash'
@@ -99,6 +124,7 @@ substitutions:
   _CLUSTER: 'gke-cluster'
   _FRONTEND_IMAGE: 'us-central1-docker.pkg.dev/project-e88d1c23-e44c-4d58-8dd/om-app-repo/frontend-image'
   _BACKEND_IMAGE: 'us-central1-docker.pkg.dev/project-e88d1c23-e44c-4d58-8dd/om-app-repo/backend-image'
+  _SONAR_TOKEN: squ_1ec3842857d5d05fd76dc1d4be5e0b38f90a2991  
 
 options:
   logging: CLOUD_LOGGING_ONLY
