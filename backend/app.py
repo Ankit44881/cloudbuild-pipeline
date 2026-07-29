@@ -6,15 +6,11 @@ from flask_cors import CORS
 
 app = Flask(__name__)
 
-# Dynamic CORS handling for flexible testing IPs and SonarQube compliance
-allowed_origins = os.getenv("ALLOWED_ORIGINS", "*")
+# Security Fix: Dynamic Environment-Driven CORS
+allowed_origins_raw = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000")
+origins_list = [origin.strip() for origin in allowed_origins_raw.split(",") if origin.strip()]
 
-if allowed_origins == "*":
-    CORS(app, resources={r"/api/*": {"origins": "*"}})
-else:
-    origins_list = [origin.strip() for origin in allowed_origins.split(",")]
-    CORS(app, resources={r"/api/*": {"origins": origins_list}})
-    
+CORS(app, resources={r"/api/*": {"origins": origins_list}})
 # -------------------------
 # Helper Functions & Validation
 # -------------------------
