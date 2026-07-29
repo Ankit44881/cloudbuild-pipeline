@@ -5,8 +5,16 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 
 app = Flask(__name__)
-CORS(app)  # Allow cross-origin requests
 
+# Dynamic CORS handling for flexible testing IPs and SonarQube compliance
+allowed_origins = os.getenv("ALLOWED_ORIGINS", "*")
+
+if allowed_origins == "*":
+    CORS(app, resources={r"/api/*": {"origins": "*"}})
+else:
+    origins_list = [origin.strip() for origin in allowed_origins.split(",")]
+    CORS(app, resources={r"/api/*": {"origins": origins_list}})
+    
 # -------------------------
 # Helper Functions & Validation
 # -------------------------
