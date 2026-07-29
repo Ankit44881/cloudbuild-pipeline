@@ -5,6 +5,8 @@ steps:
   - name: 'python:3.10-slim'
     id: 'Run Unit Tests'
     entrypoint: 'bash'
+    env:
+      - 'PYTHONPATH=.'
     args:
       - '-c'
       - |
